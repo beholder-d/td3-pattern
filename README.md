@@ -17,9 +17,9 @@ I hit the wall trying to modify pattern in TD3 to fit chord change because edito
 I'm planning to provide binaries for Windows/Mac/Linux later, for now you should build it form sources
 
 1. Install Rust https://www.rust-lang.org/tools/install or https://forge.rust-lang.org/infra/other-installation-methods.html
-2. git clone https://github.com/beholder-d/td3-pattern.git
-3. cargo build --release
-
+2. `git clone https://github.com/beholder-d/td3-pattern.git`
+3. `cargo build --release`
+4. `./target/release/td3-pattern`
 
 ## File Format
 
@@ -40,8 +40,8 @@ Rest:         ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   , RS,   ,     //  
 
 ```
 Usage:
-    td3pattern [-in_port=\"name\"] [-out_port=\"name\"] <group> <pattern><a|b> [-file=filename]
-    td3pattern [-in_port=\"name\"] [-out_port=\"name\"] upload <group> <pattern><a|b> -file=filename
+    td3-pattern [-in_port=\"name\"] [-out_port=\"name\"] <group> <pattern><a|b> [-file=filename]
+    td3-pattern [-in_port=\"name\"] [-out_port=\"name\"] upload <group> <pattern><a|b> -file=filename
 Where:
     -in_port=\"name\" -- name of TD-3 midi in
     -out_port=\"name\" -- name of TD-3 midi out
@@ -50,11 +50,11 @@ Where:
     <pattern><a|b> - Pattern 1-8 AB
 
 Example -- view group 1 pattern 1A:
-    td3pattern 1 1A
+    td3-pattern 1 1A
 Example -- using loopback drivers save group 4 pattern 2B to file
-    td3pattern -in_port=\"Loopback in 1\" -out_port=\"Loopback out 1\" 1 2B -file=pattern1-2B.txt
+    td3-pattern -in_port=\"Loopback in 1\" -out_port=\"Loopback out 1\" 1 2B -file=pattern1-2B.txt
 Example -- load file and upload it to group 3 pattern 8A
-    td3pattern upload 1 1A -file=confusion-pattern.txt
+    td3-pattern upload 1 1A -file=confusion-pattern.txt
 ```
 
 ## TD3 Sysex format
