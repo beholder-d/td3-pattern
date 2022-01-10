@@ -1,0 +1,17 @@
+edition = "2021"
+max_width = 120
+fn_call_width = 100
+fn_single_line = true
+#comment_width = 100
+#format_code_in_doc_comments = true
+#imports_layout = "HorizontalVertical"
+import_granularity = "Module"
+#group_imports = "StdExternalCrate"
+single_line_if_else_max_width = 80
+#space_after_colon = true
+#spaces_around_ranges = true
+struct_lit_width = 100
+struct_variant_width = 100
+#trailing_comma = "Never"
+use_small_heuristics = "Max"
+#use_field_init_shorthand = true
