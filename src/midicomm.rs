@@ -9,7 +9,10 @@ pub fn open_ports(
     let ports = out_midi.ports();
     let out_port = match ports.iter().find(|p| out_midi.port_name(p).unwrap() == *out_port) {
         Some(p) => p,
-        None => return Err(format!("Output port \"{}\" is not found", out_port).into()),
+        None => {
+            let port_names = ports.iter().map(|p| out_midi.port_name(p).expect("")).collect::<Vec<String>>().join(", ");
+            return Err(format!("Output port \"{}\" is not found. Available ports: {}", out_port, port_names).into());
+        }
     };
     // In
     let mut in_midi = midir::MidiInput::new("").expect("Failed create MidiOutput");
@@ -17,7 +20,10 @@ pub fn open_ports(
     let ports = in_midi.ports();
     let in_port = match ports.iter().find(|p| in_midi.port_name(p).unwrap() == *in_port) {
         Some(p) => p,
-        None => return Err(format!("Input port \"{}\" is not found", in_port).into()),
+        None => {
+            let port_names = ports.iter().map(|p| in_midi.port_name(p).expect("")).collect::<Vec<String>>().join(", ");
+            return Err(format!("Input port \"{}\" is not found. Available ports: {}", in_port, port_names).into());
+        }
     };
     Ok((out_midi, out_port.to_owned(), in_midi, in_port.to_owned()))
 }

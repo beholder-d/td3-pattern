@@ -58,7 +58,7 @@ pub fn get_config() -> Result<Config, Box<dyn Error>> {
 
     // Main args -- [verb] grpoup
     if args.len() < 2 {
-        return Err("Not enough arguments".into());
+        return Err("Incorrect number of arguments".into());
     }
     let mut iter = args.iter();
     let _ = iter.next();
