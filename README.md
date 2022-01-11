@@ -36,6 +36,8 @@ Tied note:  TI,   , TI, TI, TI,   ,   , TI, TI,   ,   , TI, TI,   ,   , TI  //  
 Rest:         ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   , RS,   ,     //   -RS
 ```
 
+I wanted to move to YAML, but alas it doesn't like empty entries like `Accent: [ , AC]`
+
 ## Usage
 
 ```
@@ -60,4 +62,29 @@ Example -- load file and upload it to group 3 pattern 8A
 ## TD3 Sysex format
 
 Midi sysex format and communications are described in https://303patterns.com/td3-midi.html by people from https://audiopump.co/ kudos to them.
+
+## Pattern Sysex Payload
+
+```
+78 <-- message ID
+03, 0f, <-- group, pattern
+00, 01, <-- unknown 1
+01, 0b, 01, 0b, 00, 0d, 01, 09, 00, 0d, 02, 0c, 02, 07, 02, 07, <-- note
+02, 0c, 02, 07, 01, 0c, 02, 07, 01, 0b, 02, 05, 00, 0f, 02, 0c,
+00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, <-- accent
+00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00,
+00, 00, 00, 01, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 01, <-- slide
+00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00,
+00, 00, <-- triplet
+01, 00, <-- steps
+00, 00, <-- unknown 2
+09, 0d, 09, 09, <-- ties
+00, 00, 02, 00  <-- rests
+```
+
+Few quirks: I'm seeing 01 in second byte of unknown 1, which is kinda strange
+
+## Additional notes
+
+Thanks to https://github.com/alebastr for answering noob questions
 
