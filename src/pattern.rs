@@ -102,7 +102,7 @@ pub fn pattern_to_string(pattern: &Pattern) -> String {
             sep.push(',');
         }
         let s = &pattern.step[n];
-        num.push_str(&format!("{} {:02X?}", sep, n));
+        num.push_str(&format!("{} {:02?}", sep, n + 1));
         note.push_str(&format!("{} {:2}", sep, NOTE[s.note as usize]));
         transpose.push_str(&format!("{} {:2}", sep, TRANSPOSE[s.transpose as usize]));
         accent.push_str(&format!("{} {:2}", sep, ACCENT[s.accent as usize]));
