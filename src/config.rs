@@ -40,7 +40,7 @@ pub struct Config {
 }
 
 pub const DEFAULT_PORTNAME: &'static str = "TD-3";
-const FILENAME: &'static str = "filename";
+const FILE: &'static str = "file";
 const IN_PORT: &'static str = "in_port";
 const OUT_PORT: &'static str = "out_port";
 
@@ -69,7 +69,7 @@ pub fn get_config() -> Result<Config, Box<dyn Error>> {
             if args.len() < 4 {
                 return Err("Invalid number of program arguments for upload".into());
             }
-            if !argv.contains_key(FILENAME) || argv.get(FILENAME).unwrap().first().unwrap() == "" {
+            if !argv.contains_key(FILE) || argv.get(FILE).unwrap().first().unwrap() == "" {
                 return Err("For upload -file=\"filename\" should be specified".into());
             }
             arg = iter.next().unwrap();
@@ -106,8 +106,8 @@ pub fn get_config() -> Result<Config, Box<dyn Error>> {
         _ => return Err("Pattern should end with letter A or B".into()),
     };
     // -filename
-    if argv.contains_key(FILENAME) {
-        config.filename = argv.get(FILENAME).unwrap().first().unwrap().to_string();
+    if argv.contains_key(FILE) {
+        config.filename = argv.get(FILE).unwrap().first().unwrap().to_string();
     }
     // -in_port
     if argv.contains_key(IN_PORT) && argv.get(IN_PORT).unwrap().first().unwrap() != "" {
