@@ -1,6 +1,10 @@
 extern crate scan_fmt;
+use crate::time::Time;
 use scan_fmt::scan_fmt;
+use std::clone::Clone;
 use std::error::Error;
+use std::fmt::Debug;
+use std::str::FromStr;
 use std::str::Lines;
 
 #[derive(Debug, Copy, Clone)]
@@ -9,13 +13,12 @@ pub struct Step {
     transpose: u8,
     accent: bool,
     slide: bool,
-    tie: bool,
-    rest: bool,
+    time: Time,
 }
 
 impl Default for Step {
     fn default() -> Step {
-        Step { note: 0, transpose: 1, accent: false, slide: false, tie: false, rest: false }
+        Step { note: 0, transpose: 1, accent: false, slide: false, time: Time::Normal }
     }
 }
 
@@ -60,28 +63,31 @@ pub fn sysex_to_pattern(msg: &[u8]) -> Pattern {
         s.transpose = note / 12 - 1 - upperc;
         s.accent = msg[0x26 + dn] == 1;
         s.slide = msg[0x46 + dn] == 1;
-        s.tie = ((&tienum & (1 as u16) << n) >> n) == 1;
-        s.rest = ((&restnum & (1 as u16) << n) >> n) == 1;
+        // rest is more important than tie in sequencor
+        s.time = if (&restnum & (1 as u16) << n) > 0 {
+            Time::Rest
+        } else if (&tienum & (1 as u16) << n) > 0 {
+            Time::Tie
+        } else {
+            Time::Normal
+        }
     }
     Pattern { triplet: msg[0x66] == 1, active_steps: (msg[0x67] << 4) + msg[0x68], step }
 }
 
 const TD3_PATTERN: &'static str = "TD-3 Pattern";
 const ACTIVE_STEPS: &'static str = "Active Steps";
-const TRIPLET_MODE: &'static str = "Triplet mode";
+const TRIPLET: &'static str = "Triplet Time";
 const NOTE_S: &'static str = "Note:      ";
 const TRANSPOSE_S: &'static str = "Transpose: ";
 const ACCENT_S: &'static str = "Accent:    ";
 const SLIDE_S: &'static str = "Slide:     ";
-const TIE_S: &'static str = "Tied note: ";
-const REST_S: &'static str = "Rest:      ";
+const TIME: &'static str = "Tie/Rest:  ";
 
 const NOTE: &'static [&str] = &["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C^"];
 const TRANSPOSE: &'static [&str] = &["DN", "", "UP"];
 const ACCENT: &'static [&str] = &["", "AC"];
 const SLIDE: &'static [&str] = &["", "SL"];
-const TIE: &'static [&str] = &["", "TI"];
-const REST: &'static [&str] = &["", "RS"];
 
 pub fn pattern_to_string(pattern: &Pattern) -> String {
     let mut sep = String::from("");
@@ -90,8 +96,7 @@ pub fn pattern_to_string(pattern: &Pattern) -> String {
     let mut transpose = String::from(TRANSPOSE_S);
     let mut accent = String::from(ACCENT_S);
     let mut slide = String::from(SLIDE_S);
-    let mut tie = String::from(TIE_S);
-    let mut rest = String::from(REST_S);
+    let mut time = String::from(TIME);
     for n in 0..16 {
         if n == 1 {
             sep.push(',');
@@ -102,16 +107,14 @@ pub fn pattern_to_string(pattern: &Pattern) -> String {
         transpose.push_str(&format!("{} {:2}", sep, TRANSPOSE[s.transpose as usize]));
         accent.push_str(&format!("{} {:2}", sep, ACCENT[s.accent as usize]));
         slide.push_str(&format!("{} {:2}", sep, SLIDE[s.slide as usize]));
-        tie.push_str(&format!("{} {:2}", sep, TIE[s.tie as usize]));
-        rest.push_str(&format!("{} {:2}", sep, REST[s.rest as usize]));
+        time.push_str(&format!("{} {:2?}", sep, s.time));
     }
     num.push('\n');
     note.push_str("  // C -C# .. B -C^\n");
     transpose.push_str("  // DN-  -UP\n");
     accent.push_str("  //   -AC\n");
     slide.push_str("  //   -SL\n");
-    tie.push_str("  //   -TI\n");
-    rest.push_str("  //   -RS\n");
+    time.push_str("  //   -TI-RS\n");
 
     let mut pattern_str = String::from(TD3_PATTERN);
     pattern_str.push('\n');
@@ -119,7 +122,7 @@ pub fn pattern_to_string(pattern: &Pattern) -> String {
         "{}: {}, {}: {}\n",
         ACTIVE_STEPS,
         pattern.active_steps,
-        TRIPLET_MODE,
+        TRIPLET,
         if pattern.triplet { "On" } else { "Off" }
     ));
     pattern_str.push('\n');
@@ -128,8 +131,7 @@ pub fn pattern_to_string(pattern: &Pattern) -> String {
     pattern_str.push_str(&transpose);
     pattern_str.push_str(&accent);
     pattern_str.push_str(&slide);
-    pattern_str.push_str(&tie);
-    pattern_str.push_str(&rest);
+    pattern_str.push_str(&time);
 
     pattern_str
 }
@@ -175,10 +177,10 @@ pub fn string_to_pattern(string_pattern: String) -> Result<Pattern, Box<dyn Erro
     // Active Steps
     let line = next_nonempty_line(&mut lines);
     match scan_fmt!(&line, "{[^:]}: {d}, {[^:]}: {}", String, u8, String, String) {
-        Err(_) => return Err(format!("Expecting {}: # and {}: #, read: {}", ACTIVE_STEPS, TRIPLET_MODE, line).into()),
+        Err(_) => return Err(format!("Expecting {}: # and {}: #, read: {}", ACTIVE_STEPS, TRIPLET, line).into()),
         Ok((a_s, a_s_value, trip, trip_value)) => {
-            if a_s != ACTIVE_STEPS || trip != TRIPLET_MODE {
-                return Err(format!("Expecting {}: # and {}: #, read: {}", ACTIVE_STEPS, TRIPLET_MODE, line).into());
+            if a_s != ACTIVE_STEPS || trip != TRIPLET {
+                return Err(format!("Expecting {}: # and {}: #, read: {}", ACTIVE_STEPS, TRIPLET, line).into());
             }
             pattern.active_steps = a_s_value;
             pattern.triplet = trip_value == "On";
@@ -188,8 +190,7 @@ pub fn string_to_pattern(string_pattern: String) -> Result<Pattern, Box<dyn Erro
     let transpose = split_entries(&mut lines, TRANSPOSE_S)?;
     let accent = split_entries(&mut lines, ACCENT_S)?;
     let slide = split_entries(&mut lines, SLIDE_S)?;
-    let tie = split_entries(&mut lines, TIE_S)?;
-    let rest = split_entries(&mut lines, REST_S)?;
+    let time = split_entries(&mut lines, TIME)?;
     for i in 0..=15 {
         let s = &mut pattern.step[i];
         // todo: turn to macro or fn and callbacks
@@ -205,20 +206,27 @@ pub fn string_to_pattern(string_pattern: String) -> Result<Pattern, Box<dyn Erro
             Some(x) => s.accent = x == 1,
             None => return Err(format!("Wrong '{}' on postion {}: {}", ACCENT_S.trim(), i, accent[i]).into()),
         };
-        match SLIDE.iter().position(|&a| slide[i] == a) {
+        match SLIDE.iter().position(|&s| slide[i] == s) {
             Some(x) => s.slide = x == 1,
             None => return Err(format!("Wrong '{}' on postion {}: {}", SLIDE_S.trim(), i, slide[i]).into()),
         };
-        match TIE.iter().position(|&a| tie[i] == a) {
-            Some(x) => s.tie = x == 1,
-            None => return Err(format!("Wrong '{}' on postion {}: {}", TIE_S.trim(), i, tie[i]).into()),
-        };
-        match REST.iter().position(|&a| rest[i] == a) {
-            Some(x) => s.rest = x == 1,
-            None => return Err(format!("Wrong '{}' on postion {}: {}", REST_S.trim(), i, rest[i]).into()),
+        match Time::from_str(&time[i]) {
+            Ok(x) => s.time = x,
+            _ => return Err(format!("Wrong '{}' on postion {}: {}", TIME.trim(), i, time[i]).into()),
         };
     }
     Ok(pattern)
+}
+
+macro_rules! u16_to_four_u8 {
+    ($var: expr) => {
+        [
+            (($var & 0x00F0) >> 4) as u8,
+            ($var & 0x000F) as u8,
+            (($var & 0xF000) >> 12) as u8,
+            (($var & 0x0F00) >> 8) as u8,
+        ]
+    };
 }
 
 // output size should be 115 bytes
@@ -237,8 +245,8 @@ pub fn pattern_to_sysex(pattern: &Pattern, group: u8, pnum: u8, ab: u8) -> Vec<u
         note[d + 1] = composed_note & 0b00001111;
         accent[d + 1] = s.accent as u8;
         slide[d + 1] = s.slide as u8;
-        tie = tie + ((s.tie as u16) << i);
-        rest = rest + ((s.rest as u16) << i);
+        tie = tie + ((if s.time == Time::Tie { 1 } else { 0 } as u16) << i);
+        rest = rest + ((if s.time == Time::Rest { 1 } else { 0 } as u16) << i);
     }
     // create sysex
     let mut sysex: Vec<u8> = Vec::new();
@@ -251,17 +259,7 @@ pub fn pattern_to_sysex(pattern: &Pattern, group: u8, pnum: u8, ab: u8) -> Vec<u
     sysex.extend_from_slice(&[00, pattern.triplet as u8]);
     sysex.extend_from_slice(&[(pattern.active_steps & 0xF0) >> 4, pattern.active_steps & 0x0F]);
     sysex.extend_from_slice(&[00, 00]);
-    sysex.extend_from_slice(&[
-        ((tie & 0x00F0) >> 4) as u8,
-        (tie & 0x000F) as u8,
-        ((tie & 0xF000) >> 12) as u8,
-        ((tie & 0x0F00) >> 8) as u8,
-    ]);
-    sysex.extend_from_slice(&[
-        ((rest & 0x00F0) >> 4) as u8,
-        (rest & 0x000F) as u8,
-        ((rest & 0xF000) >> 12) as u8,
-        ((rest & 0x0F00) >> 8) as u8,
-    ]);
+    sysex.extend_from_slice(&(u16_to_four_u8!(tie)));
+    sysex.extend_from_slice(&(u16_to_four_u8!(rest)));
     return sysex;
 }
