@@ -6,6 +6,7 @@ use std::fs::{read_to_string, File};
 use std::io::prelude::*;
 
 mod config;
+mod time;
 use config::{Config, Mode, DEFAULT_PORTNAME};
 mod midicomm;
 use midicomm::{get_pattern, open_ports, send_sysex};
@@ -34,7 +35,7 @@ Example -- load file and upload it to group 3 pattern 8A
 fn main() {
     match run() {
         Ok(_) => (),
-        Err(err) => println!("Error: {}\n\n{}", err, USAGE),
+        Err(err) => println!("Error: {}\n{}", err, USAGE),
     }
 }
 
