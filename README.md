@@ -27,7 +27,7 @@ I'm planning to provide binaries for Windows/Mac/Linux later, for now you should
 TD-3 Pattern
 Active Steps: 16, Triplet mode: Off
 
-// Step:    00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 0A, 0B, 0C, 0D, 0E, 0F
+// Step:    01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16
 Note:       D#, D#, C#, C#, C#, G#, D#, D#, G#, D#, E , D#, D#, C#, D#, G#  // C -C# .. B -C^
 Transpose:    ,   , DN,   , DN, UP, UP, UP, UP, UP,   , UP,   , UP, DN, UP  // DN-  -UP
 Accent:       , AC,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,     //   -AC
@@ -35,7 +35,7 @@ Slide:        , SL,   ,   , SL,   ,   , SL,   ,   ,   ,   ,   , SL,   , SL  //  
 Tie/Rest:   TI,   , TI, TI, TI,   ,   , TI, TI,   ,   , TI, TI, RS,   , TI  //   -TI-RS
 ```
 
-I wanted to move to YAML, but alas it doesn't like empty entries in arrays like `Accent: [ , AC]`
+*I wanted to use to YAML, but alas it doesn't like empty entries in arrays like `Accent: [ , AC]`*
 
 ## Usage
 
@@ -58,11 +58,13 @@ Example -- load file and upload it to group 3 pattern 8A
     td3-pattern upload 1 1A -file=confusion-pattern.txt
 ```
 
-## TD3 Sysex format
+## Sysex
+
+### Format
 
 Midi sysex format and communications are described in https://303patterns.com/td3-midi.html by people from https://audiopump.co/ kudos to them.
 
-## Pattern Sysex Payload
+### Pattern sysex payload
 
 ```
 78 <-- message ID
@@ -81,7 +83,9 @@ Midi sysex format and communications are described in https://303patterns.com/td
 00, 00, 02, 00  <-- rests
 ```
 
-Few quirks: I'm seeing 01 in second byte of unknown 1, which is kinda strange
+### Quirks
+
+1. I'm seeing 01 in second byte of unknown 1, which is not like on 303patterns.com or some other places
 
 ## Additional notes
 
