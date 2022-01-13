@@ -32,21 +32,20 @@ Note:       D#, D#, C#, C#, C#, G#, D#, D#, G#, D#, E , D#, D#, C#, D#, G#  // C
 Transpose:    ,   , DN,   , DN, UP, UP, UP, UP, UP,   , UP,   , UP, DN, UP  // DN-  -UP
 Accent:       , AC,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,     //   -AC
 Slide:        , SL,   ,   , SL,   ,   , SL,   ,   ,   ,   ,   , SL,   , SL  //   -SL
-Tied note:  TI,   , TI, TI, TI,   ,   , TI, TI,   ,   , TI, TI,   ,   , TI  //   -TI
-Rest:         ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   , RS,   ,     //   -RS
+Tie/Rest:   TI,   , TI, TI, TI,   ,   , TI, TI,   ,   , TI, TI, RS,   , TI  //   -TI-RS
 ```
 
-I wanted to move to YAML, but alas it doesn't like empty entries like `Accent: [ , AC]`
+I wanted to move to YAML, but alas it doesn't like empty entries in arrays like `Accent: [ , AC]`
 
 ## Usage
 
 ```
 Usage:
-    td3-pattern [-in_port=\"name\"] [-out_port=\"name\"] <group> <pattern><a|b> [-file=filename]
-    td3-pattern [-in_port=\"name\"] [-out_port=\"name\"] upload <group> <pattern><a|b> -file=filename
+    td3-pattern [-in=\"name\"] [-out=\"name\"] <group> <pattern><a|b> [-file=filename]
+    td3-pattern [-in=\"name\"] [-out=\"name\"] upload <group> <pattern><a|b> -file=filename
 Where:
-    -in_port=\"name\" -- name of TD-3 midi in
-    -out_port=\"name\" -- name of TD-3 midi out
+    -in=\"name\" -- name of TD-3's midi in
+    -out=\"name\" -- name of TD-3's midi out
     -file=filename -- file for saving or loading pattern, in case of saving if not specified stdin is used
     <group> -- Group 1-4
     <pattern><a|b> - Pattern 1-8 AB
@@ -54,7 +53,7 @@ Where:
 Example -- view group 1 pattern 1A:
     td3-pattern 1 1A
 Example -- using loopback drivers save group 4 pattern 2B to file
-    td3-pattern -in_port=\"Loopback in 1\" -out_port=\"Loopback out 1\" 1 2B -file=pattern1-2B.txt
+    td3-pattern -in=\"Loopback in 1\" -out=\"Loopback out 1\" 1 2B -file=pattern1-2B.txt
 Example -- load file and upload it to group 3 pattern 8A
     td3-pattern upload 1 1A -file=confusion-pattern.txt
 ```

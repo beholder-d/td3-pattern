@@ -41,8 +41,8 @@ pub struct Config {
 
 pub const DEFAULT_PORTNAME: &'static str = "TD-3";
 const FILE: &'static str = "file";
-const IN_PORT: &'static str = "in_port";
-const OUT_PORT: &'static str = "out_port";
+const IN: &'static str = "in";
+const OUT: &'static str = "out";
 
 pub fn get_config() -> Result<Config, Box<dyn Error>> {
     let mut config = Config {
@@ -110,12 +110,12 @@ pub fn get_config() -> Result<Config, Box<dyn Error>> {
         config.filename = argv.get(FILE).unwrap().first().unwrap().to_string();
     }
     // -in_port
-    if argv.contains_key(IN_PORT) && argv.get(IN_PORT).unwrap().first().unwrap() != "" {
-        config.in_port = argv.get(IN_PORT).unwrap().first().unwrap().to_string();
+    if argv.contains_key(IN) && argv.get(IN).unwrap().first().unwrap() != "" {
+        config.in_port = argv.get(IN).unwrap().first().unwrap().to_string();
     }
     // -out_port
-    if argv.contains_key(OUT_PORT) && argv.get(OUT_PORT).unwrap().first().unwrap() != "" {
-        config.out_port = argv.get(OUT_PORT).unwrap().first().unwrap().to_string();
+    if argv.contains_key(OUT) && argv.get(OUT).unwrap().first().unwrap() != "" {
+        config.out_port = argv.get(OUT).unwrap().first().unwrap().to_string();
     }
     if cfg!(debug_assertions) {
         println!("|| config={:?}", config);

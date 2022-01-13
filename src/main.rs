@@ -15,19 +15,19 @@ use pattern::{pattern_to_string, pattern_to_sysex, string_to_pattern, sysex_to_p
 
 const USAGE: &'static str = "
 Usage:
-    td3pattern [-in_port=\"name\"] [-out_port=\"name\"] <group> <pattern><a|b> [-file=filename]
-    td3pattern [-in_port=\"name\"] [-out_port=\"name\"] upload <group> <pattern><a|b> -file=filename
+    td3pattern [-in=\"name\"] [-out=\"name\"] <group> <pattern><a|b> [-file=filename]
+    td3pattern [-in=\"name\"] [-out=\"name\"] upload <group> <pattern><a|b> -file=filename
 Where:
-    -in_port=\"name\" -- name of TD-3 midi in
-    -out_port=\"name\" -- name of TD-3 midi out
+    -in=\"name\" -- name of TD-3's midi in port
+    -out=\"name\" -- name of TD-3's midi out port
     -file=filename -- file for saving or loading pattern, in case of saving if not specified stdin is used
     <group> -- Group 1-4
-    <pattern><a|b> - Pattern 1-8 AB
+    <pattern><a|b> - Pattern 1-8 A-B
 
 Example -- view group 1 pattern 1A:
     td3pattern 1 1A
 Example -- using loopback drivers save group 4 pattern 2B to file
-    td3pattern -in_port=\"Loopback in 1\" -out_port=\"Loopback out 1\" 1 2B -file=pattern1-2B.txt
+    td3pattern -in=\"Loopback in 1\" -out=\"Loopback out 1\" 1 2B -file=pattern1-2B.txt
 Example -- load file and upload it to group 3 pattern 8A
     td3pattern upload 1 1A -file=confusion-pattern.txt
 ";
@@ -35,7 +35,7 @@ Example -- load file and upload it to group 3 pattern 8A
 fn main() {
     match run() {
         Ok(_) => (),
-        Err(err) => println!("Error: {}\n{}", err, USAGE),
+        Err(err) => println!("{}\n{}", err, USAGE),
     }
 }
 
