@@ -2,6 +2,7 @@ extern crate scan_fmt;
 use crate::time::Time;
 use scan_fmt::scan_fmt;
 use std::clone::Clone;
+use std::convert::TryInto;
 use std::error::Error;
 use std::fmt::Debug;
 use std::str::FromStr;
@@ -64,12 +65,22 @@ pub fn sysex_to_pattern(msg: &[u8]) -> Pattern {
         s.accent = msg[0x26 + dn] == 1;
         s.slide = msg[0x46 + dn] == 1;
         // rest is more important than tie in sequencor
-        s.time = if (&restnum & (1 as u16) << n) > 0 {
-            Time::Rest
-        } else if (&tienum & (1 as u16) << n) > 0 {
-            Time::Tie
-        } else {
-            Time::Normal
+        s.time = (((&tienum & (1 as u16) << n) >> n) + (((&restnum & (1 as u16) << n) >> n) << 1)).try_into().unwrap();
+        if cfg!(debug_assertions) {
+            println!(
+                "{:02}: raw nt {:03} - (c^={:1}) mid {:02} - nt {:02} tr {}, ac {}, sl {}, raw t {} r {} - t/r {:?}",
+                n,
+                (msg[0x06 + dn] + (msg[0x05 + dn] << 4)),
+                upperc,
+                note,
+                s.note,
+                s.transpose,
+                s.slide as u16,
+                s.accent as u16,
+                (&tienum & (1 as u16) << n) >> n,
+                (&restnum & (1 as u16) << n) >> n,
+                s.time
+            );
         }
     }
     Pattern { triplet: msg[0x66] == 1, active_steps: (msg[0x67] << 4) + msg[0x68], step }
@@ -97,12 +108,12 @@ pub fn pattern_to_string(pattern: &Pattern) -> String {
     let mut accent = String::from(ACCENT_S);
     let mut slide = String::from(SLIDE_S);
     let mut time = String::from(TIME);
-    for n in 0..16 {
-        if n == 1 {
+    for i in 0..=15 {
+        if i == 1 {
             sep.push(',');
         }
-        let s = &pattern.step[n];
-        num.push_str(&format!("{} {:02?}", sep, n + 1));
+        let s = &pattern.step[i];
+        num.push_str(&format!("{} {:02?}", sep, i + 1));
         note.push_str(&format!("{} {:2}", sep, NOTE[s.note as usize]));
         transpose.push_str(&format!("{} {:2}", sep, TRANSPOSE[s.transpose as usize]));
         accent.push_str(&format!("{} {:2}", sep, ACCENT[s.accent as usize]));
@@ -114,7 +125,7 @@ pub fn pattern_to_string(pattern: &Pattern) -> String {
     transpose.push_str("  // DN-  -UP\n");
     accent.push_str("  //   -AC\n");
     slide.push_str("  //   -SL\n");
-    time.push_str("  //   -TI-RS\n");
+    time.push_str("  //   -TI-RE\n");
 
     let mut pattern_str = String::from(TD3_PATTERN);
     pattern_str.push('\n');
@@ -132,6 +143,8 @@ pub fn pattern_to_string(pattern: &Pattern) -> String {
     pattern_str.push_str(&accent);
     pattern_str.push_str(&slide);
     pattern_str.push_str(&time);
+    pattern_str.push_str("// Read 'Sequencer Quirks' in README.md or https://github.com/beholder-d/td3-pattern\n");
+    pattern_str.push_str("// for information about strange/buggy effects of Tie/Rest on pattern execution\n");
 
     pattern_str
 }
@@ -234,8 +247,8 @@ pub fn pattern_to_sysex(pattern: &Pattern, group: u8, pnum: u8, ab: u8) -> Vec<u
     let mut note: [u8; 32] = [0; 32];
     let mut accent: [u8; 32] = [0; 32];
     let mut slide: [u8; 32] = [0; 32];
-    let mut tie = 0;
-    let mut rest = 0;
+    let mut tie = 0u16;
+    let mut rest = 0u16;
     for i in 0..=15 {
         let d = i << 1;
         let s = &pattern.step[i];
@@ -245,8 +258,11 @@ pub fn pattern_to_sysex(pattern: &Pattern, group: u8, pnum: u8, ab: u8) -> Vec<u
         note[d + 1] = composed_note & 0b00001111;
         accent[d + 1] = s.accent as u8;
         slide[d + 1] = s.slide as u8;
-        tie = tie + ((if s.time == Time::Tie { 1 } else { 0 } as u16) << i);
-        rest = rest + ((if s.time == Time::Rest { 1 } else { 0 } as u16) << i);
+        tie = tie + (((s.time as u16) & 0b01) << i);
+        rest = rest + ((((s.time as u16) & 0b10) >> 1) << i);
+        if cfg!(debug_assertions) {
+            println!("{:02}: t {} r {}", i, ((s.time as u16) & 0b01), (((s.time as u16) & 0b10) >> 1));
+        }
     }
     // create sysex
     let mut sysex: Vec<u8> = Vec::new();
