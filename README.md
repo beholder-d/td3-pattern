@@ -89,7 +89,7 @@ Midi sysex format and communications are described in https://303patterns.com/td
 
 ## Sequencer Quirks
 
-Imagine pattern below
+Original 303 sequencer is quirky, TD-3 is mimicking that quirks. Let's start with pattern below:
 
 ```
 // Step:    01, 02, 03, 04
@@ -111,7 +111,7 @@ Slide:        ,   ,   ,
 Tie/Rest:     , TI... ,
 ```
 
-And This pattern
+And this pattern:
 
 ```
 // Step:    01, 02, 03, 04, 05
@@ -122,7 +122,7 @@ Slide:        ,   ,   ,   ,
 Tie/Rest:     , TI,   , RE,
 ```
 
-Would actually turn to
+Would actually turn to:
 
 ```
 // Step:    01, 02, 03, 04, 05
@@ -135,7 +135,7 @@ Tie/Rest:     , TI... , RE,
 
 So as you see Tie/Rest is constantly advancing but Note/Transpose/Accent/Slide are advancing differently when RS/TI are hit. If TI hit it's waiting for when string of TI is over and then stepping forward, if RS hit it's waiting for string of RS is over and then playing current step.
 
-¯\_(ツ)_/¯
+``¯\_(ツ)_/¯``
 
 ## Additional notes
 
