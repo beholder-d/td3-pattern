@@ -32,7 +32,7 @@ Note:       D#, D#, C#, C#, C#, G#, D#, D#, G#, D#, E , D#, D#, C#, D#, G#  // C
 Transpose:    ,   , DN,   , DN, UP, UP, UP, UP, UP,   , UP,   , UP, DN, UP  // DN-  -UP
 Accent:       , AC,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,   ,     //   -AC
 Slide:        , SL,   ,   , SL,   ,   , SL,   ,   ,   ,   ,   , SL,   , SL  //   -SL
-Tie/Rest:   TI,   , TI, TI, TI,   ,   , TI, TI,   ,   , TI, TI, RS,   , TI  //   -TI-RS
+Tie/Rest:     , TI,   ,   ,   , TI,   ,   , TI,   ,   , TI, TI, RE,   , TI  //   -TI-RE
 ```
 
 *I wanted to use to YAML, but alas it doesn't like empty entries in arrays like `Accent: [ , AC]`*
@@ -83,9 +83,59 @@ Midi sysex format and communications are described in https://303patterns.com/td
 00, 00, 02, 00  <-- rests
 ```
 
-### Quirks
+### Questions
 
 1. I'm seeing 01 in second byte of unknown 1, which is not like on 303patterns.com or some other places
+
+## Sequencer Quirks
+
+Imagine pattern below
+
+```
+// Step:    01, 02, 03, 04
+Note:        C,  D,  E,  F
+Transpose:    ,   , UP, DN
+Accent:     AC,   ,   ,
+Slide:        ,   ,   ,
+Tie/Rest:     , TI,   ,
+```
+
+You think it would be pattern playing C - D - E - F or if we interpret Tie note as two Ds C - D...D - F pattern? You're wrong! Actual pattern would be:
+
+```
+// Step:    01, 02, 03, 04
+Note:        C,  D... ,  E
+Transpose:    ,   ,   , UP
+Accent:     AC,   ,   ,
+Slide:        ,   ,   ,
+Tie/Rest:     , TI... ,
+```
+
+And This pattern
+
+```
+// Step:    01, 02, 03, 04, 05
+Note:        C,  D,  E,  F,  G
+Transpose:    ,   , UP, DN,
+Accent:       ,   , AC,   ,
+Slide:        ,   ,   ,   ,
+Tie/Rest:     , TI,   , RE,
+```
+
+Would actually turn to
+
+```
+// Step:    01, 02, 03, 04, 05
+Note:        C,  D... ,   ,  E
+Transpose:    ,   ,   ,   , UP
+Accent:       ,   ,   ,   , AC
+Slide:        ,   ,   ,   ,
+Tie/Rest:     , TI... , RE,
+```
+
+So as you see Tie/Rest is constantly advancing but Note/Transpose/Accent/Slide are advancing differently when RS/TI are hit. If TI hit it's waiting for when string of TI is over and then stepping forward, if RS hit it's waiting for string of RS is over and then playing current step.
+
+¯\_(ツ)_/¯
 
 ## Additional notes
 
