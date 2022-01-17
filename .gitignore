@@ -2,3 +2,4 @@
 /p
 /doc
 *.code-workspace
+.DS_Store
