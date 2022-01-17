@@ -143,8 +143,7 @@ pub fn pattern_to_string(pattern: &Pattern) -> String {
     pattern_str.push_str(&accent);
     pattern_str.push_str(&slide);
     pattern_str.push_str(&time);
-    pattern_str.push_str("// Read 'Sequencer Quirks' in README.md or https://github.com/beholder-d/td3-pattern\n");
-    pattern_str.push_str("// for information about strange/buggy effects of Tie/Rest on pattern execution\n");
+    pattern_str.push_str("// Read 'Sequencer Quirks' in README.md about Tie/Rest and pattern execution\n");
 
     pattern_str
 }
