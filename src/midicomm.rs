@@ -31,9 +31,9 @@ pub fn open_ports(
 const SYX_PRE: &'static [u8] = &[0xF0, 0x00, 0x20, 0x32, 0x00, 0x01, 0x0A];
 const SYX_POST: &'static [u8] = &[0xF7];
 
-pub async fn send_sysex(
+pub fn send_sysex(
     out_conn: &mut midir::MidiOutputConnection,
-    rx: &mut tokio::sync::mpsc::Receiver<std::vec::Vec<u8>>,
+    rx: &std::sync::mpsc::Receiver<std::vec::Vec<u8>>,
     desc: &str,
     data_smsg: &[u8],
 ) -> Result<std::vec::Vec<u8>, Box<dyn Error>> {
@@ -43,9 +43,9 @@ pub async fn send_sysex(
     out_conn.send(SYX_PRE).unwrap();
     out_conn.send(&data_smsg).unwrap();
     out_conn.send(SYX_POST).unwrap();
-    let rmsg = rx.recv().await; // std::vec::Vec<u8>
+    let rmsg = rx.recv(); // std::vec::Vec<u8>
     match rmsg {
-        Some(m) => {
+        Ok(m) => {
             if cfg!(debug_assertions) {
                 println!("<< Response ({}b) {:02x?}", m.len(), m);
             }
@@ -59,13 +59,13 @@ pub async fn send_sysex(
                 return Ok((&m[SYX_PRE.len()..m.len() - 1]).to_owned());
             }
         }
-        None => Err(format!("No response for {} has been received", desc).into()),
+        Err(_) => Err(format!("No response for {} has been received", desc).into()),
     }
 }
 
-pub async fn get_pattern(
+pub fn get_pattern(
     out_conn: &mut midir::MidiOutputConnection,
-    rx: &mut tokio::sync::mpsc::Receiver<std::vec::Vec<u8>>,
+    rx: &std::sync::mpsc::Receiver<std::vec::Vec<u8>>,
     group: u8,
     pnum: u8,
     ab: u8,
@@ -75,8 +75,8 @@ pub async fn get_pattern(
     } else if pnum > 7 {
         return Err("Invalid pattern specified".into());
     } else if ab > 1 {
-        return Err("Invalid ab specified".into());
+        return Err("Invalid AB specified".into());
     }
     let desc = format!("Pattern Group {} Pattern {}{}", group + 1, pnum + 1, if ab == 0 { "a" } else { "b" });
-    send_sysex(out_conn, rx, &desc, &[0x77, group, pnum + (ab << 3)]).await
+    send_sysex(out_conn, rx, &desc, &[0x77, group, pnum + (ab << 3)])
 }
