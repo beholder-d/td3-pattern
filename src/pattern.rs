@@ -1,5 +1,5 @@
 extern crate scan_fmt;
-use crate::time::Time;
+use crate::notetime::Notetime;
 use scan_fmt::scan_fmt;
 use std::clone::Clone;
 use std::convert::TryInto;
@@ -14,12 +14,12 @@ pub struct Step {
     transpose: u8,
     accent: bool,
     slide: bool,
-    time: Time,
+    time: Notetime,
 }
 
 impl Default for Step {
     fn default() -> Step {
-        Step { note: 0, transpose: 1, accent: false, slide: false, time: Time::Normal }
+        Step { note: 0, transpose: 1, accent: false, slide: false, time: Notetime::Normal }
     }
 }
 
@@ -88,7 +88,7 @@ pub fn sysex_to_pattern(msg: &[u8]) -> Pattern {
 
 const TD3_PATTERN: &'static str = "TD-3 Pattern";
 const ACTIVE_STEPS: &'static str = "Active Steps";
-const TRIPLET: &'static str = "Triplet Time";
+const TRIPLET: &'static str = "Triplet Notetime";
 const NOTE_S: &'static str = "Note:      ";
 const TRANSPOSE_S: &'static str = "Transpose: ";
 const ACCENT_S: &'static str = "Accent:    ";
@@ -222,7 +222,7 @@ pub fn string_to_pattern(string_pattern: String) -> Result<Pattern, Box<dyn Erro
             Some(x) => s.slide = x == 1,
             None => return Err(format!("Wrong '{}' on postion {}: {}", SLIDE_S.trim(), i, slide[i]).into()),
         };
-        match Time::from_str(&time[i]) {
+        match Notetime::from_str(&time[i]) {
             Ok(x) => s.time = x,
             _ => return Err(format!("Wrong '{}' on postion {}: {}", TIME.trim(), i, time[i]).into()),
         };
