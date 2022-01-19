@@ -1,37 +1,22 @@
-extern crate scan_fmt;
-use crate::notetime::Notetime;
-use scan_fmt::scan_fmt;
-use std::clone::Clone;
 use std::convert::TryInto;
 use std::error::Error;
-use std::fmt::Debug;
 use std::str::FromStr;
 use std::str::Lines;
 
-#[derive(Debug, Copy, Clone)]
-pub struct Step {
-    note: u8,
-    transpose: u8,
-    accent: bool,
-    slide: bool,
-    time: Notetime,
-}
+extern crate scan_fmt;
+use scan_fmt::scan_fmt;
 
-impl Default for Step {
-    fn default() -> Step {
-        Step { note: 0, transpose: 1, accent: false, slide: false, time: Notetime::Normal }
-    }
-}
+use crate::step;
 
 pub struct Pattern {
     triplet: bool,
     active_steps: u8,
-    step: [Step; 16],
+    step: [step::Step; 16],
 }
 
 impl Default for Pattern {
     fn default() -> Pattern {
-        Pattern { triplet: false, active_steps: 1, step: [Step { ..Default::default() }; 16] }
+        Pattern { triplet: false, active_steps: 1, step: [step::Step { ..Default::default() }; 16] }
     }
 }
 
@@ -48,7 +33,7 @@ macro_rules! four_u8_to_u16 {
 pub fn sysex_to_pattern(msg: &[u8]) -> Pattern {
     let tienum = four_u8_to_u16!(msg, 0x6B);
     let restnum = four_u8_to_u16!(msg, 0x6F);
-    let mut step: [Step; 16] = Default::default();
+    let mut step: [step::Step; 16] = Default::default();
     for n in 0..16 {
         let s = &mut step[n];
         // whether it's upper c (i.e. last bit is 1)
@@ -62,8 +47,8 @@ pub fn sysex_to_pattern(msg: &[u8]) -> Pattern {
         // we're actually using 13 notes like it's on td-3
         s.note = note % 12 + upperc * 12;
         s.transpose = note / 12 - 1 - upperc;
-        s.accent = msg[0x26 + dn] == 1;
-        s.slide = msg[0x46 + dn] == 1;
+        s.accent = msg[0x26 + dn].try_into().unwrap();
+        s.slide = msg[0x46 + dn].try_into().unwrap();
         // rest is more important than tie in sequencor
         s.time = (((&tienum & (1 as u16) << n) >> n) + (((&restnum & (1 as u16) << n) >> n) << 1)).try_into().unwrap();
         if cfg!(debug_assertions) {
@@ -88,7 +73,7 @@ pub fn sysex_to_pattern(msg: &[u8]) -> Pattern {
 
 const TD3_PATTERN: &'static str = "TD-3 Pattern";
 const ACTIVE_STEPS: &'static str = "Active Steps";
-const TRIPLET: &'static str = "Triplet Notetime";
+const TRIPLET: &'static str = "Triplet Time";
 const NOTE_S: &'static str = "Note:      ";
 const TRANSPOSE_S: &'static str = "Transpose: ";
 const ACCENT_S: &'static str = "Accent:    ";
@@ -214,15 +199,15 @@ pub fn string_to_pattern(string_pattern: String) -> Result<Pattern, Box<dyn Erro
             Some(x) => s.transpose = x as u8,
             None => return Err(format!("Wrong '{}' on postion {}: {}", TRANSPOSE_S.trim(), i, transpose[i]).into()),
         };
-        match ACCENT.iter().position(|&a| accent[i] == a) {
-            Some(x) => s.accent = x == 1,
-            None => return Err(format!("Wrong '{}' on postion {}: {}", ACCENT_S.trim(), i, accent[i]).into()),
+        match step::Accent::from_str(&accent[i]) {
+            Ok(x) => s.accent = x,
+            _ => return Err(format!("Wrong '{}' on postion {}: {}", ACCENT_S.trim(), i, accent[i]).into()),
         };
-        match SLIDE.iter().position(|&s| slide[i] == s) {
-            Some(x) => s.slide = x == 1,
-            None => return Err(format!("Wrong '{}' on postion {}: {}", SLIDE_S.trim(), i, slide[i]).into()),
+        match step::Slide::from_str(&slide[i]) {
+            Ok(x) => s.slide = x,
+            _ => return Err(format!("Wrong '{}' on postion {}: {}", SLIDE_S.trim(), i, slide[i]).into()),
         };
-        match Notetime::from_str(&time[i]) {
+        match step::Time::from_str(&time[i]) {
             Ok(x) => s.time = x,
             _ => return Err(format!("Wrong '{}' on postion {}: {}", TIME.trim(), i, time[i]).into()),
         };

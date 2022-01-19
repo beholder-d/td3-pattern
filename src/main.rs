@@ -6,7 +6,7 @@ use std::io::prelude::*;
 use std::sync::mpsc;
 
 mod config;
-mod notetime;
+mod step;
 use config::{Config, Mode, DEFAULT_PORTNAME};
 mod midicomm;
 use midicomm::{get_pattern, open_ports, send_sysex};
