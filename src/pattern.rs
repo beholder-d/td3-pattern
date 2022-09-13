@@ -46,14 +46,14 @@ pub fn sysex_to_pattern(msg: &[u8]) -> Pattern {
         }
         // we're actually using 13 notes like it's on td-3
         s.note = note % 12 + upperc * 12;
-        s.transpose = note / 12 - 1 - upperc;
+        s.transpose = (note / 12 - 1 - upperc).try_into().unwrap();
         s.accent = msg[0x26 + dn].try_into().unwrap();
         s.slide = msg[0x46 + dn].try_into().unwrap();
         // rest is more important than tie in sequencor
         s.time = (((&tienum & (1 as u16) << n) >> n) + (((&restnum & (1 as u16) << n) >> n) << 1)).try_into().unwrap();
         if cfg!(debug_assertions) {
             println!(
-                "{:02}: raw nt {:03} - (c^={:1}) mid {:02} - nt {:02} tr {}, ac {}, sl {}, raw t {} r {} - t/r {:?}",
+                "{:02}: raw nt {:03} - (c^={:1}) mid {:02} - nt {:02} tr {:?}, ac {}, sl {}, raw t {} r {} - t/r {:?}",
                 n,
                 (msg[0x06 + dn] + (msg[0x05 + dn] << 4)),
                 upperc,
@@ -81,9 +81,6 @@ const SLIDE_S: &'static str = "Slide:     ";
 const TIME: &'static str = "Tie/Rest:  ";
 
 const NOTE: &'static [&str] = &["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C^"];
-const TRANSPOSE: &'static [&str] = &["DN", "", "UP"];
-const ACCENT: &'static [&str] = &["", "AC"];
-const SLIDE: &'static [&str] = &["", "SL"];
 
 pub fn pattern_to_string(pattern: &Pattern) -> String {
     let mut sep = String::from("");
@@ -100,9 +97,9 @@ pub fn pattern_to_string(pattern: &Pattern) -> String {
         let s = &pattern.step[i];
         num.push_str(&format!("{} {:02?}", sep, i + 1));
         note.push_str(&format!("{} {:2}", sep, NOTE[s.note as usize]));
-        transpose.push_str(&format!("{} {:2}", sep, TRANSPOSE[s.transpose as usize]));
-        accent.push_str(&format!("{} {:2}", sep, ACCENT[s.accent as usize]));
-        slide.push_str(&format!("{} {:2}", sep, SLIDE[s.slide as usize]));
+        transpose.push_str(&format!("{} {:2?}", sep, s.transpose));
+        accent.push_str(&format!("{} {:2?}", sep, s.accent));
+        slide.push_str(&format!("{} {:2?}", sep, s.slide));
         time.push_str(&format!("{} {:2?}", sep, s.time));
     }
     num.push('\n');
@@ -195,9 +192,9 @@ pub fn string_to_pattern(string_pattern: String) -> Result<Pattern, Box<dyn Erro
             Some(x) => s.note = x as u8,
             None => return Err(format!("Wrong '{}' on postion {}: {}", NOTE_S.trim(), i, note[i]).into()),
         };
-        match TRANSPOSE.iter().position(|&t| transpose[i] == t) {
-            Some(x) => s.transpose = x as u8,
-            None => return Err(format!("Wrong '{}' on postion {}: {}", TRANSPOSE_S.trim(), i, transpose[i]).into()),
+        match step::Transpose::from_str(&transpose[i]) {
+            Ok(x) => s.transpose = x,
+            _ => return Err(format!("Wrong '{}' on postion {}: {}", TRANSPOSE_S.trim(), i, transpose[i]).into()),
         };
         match step::Accent::from_str(&accent[i]) {
             Ok(x) => s.accent = x,
@@ -237,7 +234,7 @@ pub fn pattern_to_sysex(pattern: &Pattern, group: u8, pnum: u8, ab: u8) -> Vec<u
         let d = i << 1;
         let s = &pattern.step[i];
         let hbit = if s.note >= 12 { 0x80 } else { 0 };
-        let composed_note: u8 = 12 + s.note + (s.transpose * 12) + hbit;
+        let composed_note: u8 = 12 + s.note + ((s.transpose as u8) * 12) + hbit;
         note[d] = (composed_note & 0b11110000) >> 4;
         note[d + 1] = composed_note & 0b00001111;
         accent[d + 1] = s.accent as u8;
